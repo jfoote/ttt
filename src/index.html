@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="x-ua-compatible" content="ie=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <title>Trusted Types Test</title>
+    <style>
+      iframe {
+        display: block;
+        border: 3px solid black;
+        height: calc(100vh - 30px);
+        width: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Trusted Types Test</h1>
+    <p>
+      Buttons toggle a
+      <a href="https://developer.mozilla.org/en-US/docs/Web/API/Trusted_Types_API">Trusted Types</a>
+      Content Security Policy in the iframe below. The page in the iframe can run a
+      mock DOM XSS payload (with and without a Trusted Types Policy). The page also
+      logs CSP Violation Report events, so you can observe how the browser behaves.
+    </p>
+
+    <button onclick="off()">Turn off Trusted Types CSP</button><br />
+    <button onclick="reportOnly()">Turn on Trusted Types CSP (Only report violations)</button><br />
+    <button onclick="block()">Turn on Trusted Types CSP (Block and report violations)</button><br />
+    
+    <h2 id="iframeTitle">(None)</h2>
+    <div id="iframeDesc">&nbsp;</div><br />
+    
+    <iframe id="iframe" src="about:blank"></iframe>
+
+    <script>
+      function off() {
+        document.getElementById("iframe").src = "/off";
+        document.getElementById("iframeTitle").textContent = "Trusted Types CSP Absent";
+        document.getElementById("iframeDesc").textContent =
+          "unsafeSink executes a DOM XSS payload ☹️. safeSink uses Trusted Types to execute a sanitized payload.";
+      }
+
+      function reportOnly() {
+        document.getElementById("iframe").src = "/report-only";
+        document.getElementById("iframeTitle").textContent = "Trusted Types CSP Report-Only";
+        document.getElementById("iframeDesc").textContent =
+          "unsafeSink executes a DOM XSS payload but a CSP violation report is generated. safeSink uses Trusted Types to execute a sanitized payload.";
+      }
+
+      function block() {
+        document.getElementById("iframe").src = "/block";
+        document.getElementById("iframeTitle").textContent = "Trusted Types CSP Block";
+        document.getElementById("iframeDesc").textContent =
+          "unsafeSink executes a DOM XSS payload but it is blocked 💥 and a CSP violation report is generated. safeSink uses Trusted Types to execute a sanitized payload.";
+      }
+    </script>
+  </body>
+</html>

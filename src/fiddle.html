@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="x-ua-compatible" content="ie=edge" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+    <title>Trusted Types Test</title>
+    <style>
+      div {
+        border: 2px dashed gray;
+      }
+    </style>
+  </head>
+    <body>
+        <div id="targetDiv">DOM XSS target div</div>
+        <code><div id="safeSink">(code)</div></code>
+        <button onclick="safeSink()">Call safeSink()</button>
+        <code><div id="unsafeSink">(code)</div></code>
+        <button onclick="unsafeSink()">Call unsafeSink()</button>
+        <br>CSP Violation Reports: <div id="cspLog"></div>
+
+        <script>
+
+            // Trusted Types policies
+            
+            const nullHTMLPolicy = trustedTypes.createPolicy("myEscapePolicy", {
+                // Used with safe HTML
+                createHTML: (string) => string
+            });
+            
+            const escapeHTMLPolicy = trustedTypes.createPolicy("myEscapePolicy", {
+                // Used with potentially unsafe HTML
+                createHTML: (string) =>
+                string
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&apos;"),
+            });
+            
+            
+            // Handle CSP violation events
+            
+            const observer = new ReportingObserver((reports, observer) => {
+                for (const report of reports) {
+                    if (report.type !== 'csp-violation' ||
+                        report.body.effectiveDirective !== 'require-trusted-types-for') {
+                        continue;
+                    }
+            
+                    const violation = report.body;
+                    console.log('Trusted Types Violation:', violation);
+                }
+            }, { buffered: true });
+            observer.observe();
+            
+            document.addEventListener('securitypolicyviolation', (e) => {
+                console.log("securitypolicyviolation", e);
+                const props = [
+                  "isTrusted",
+                  "prototype",
+                  "blockedURI",
+                  "bubbles",
+                  "cancelBubble",
+                  "cancelable",
+                  "columnNumber",
+                  "composed",
+                  "currentTarget",
+                  "defaultPrevented",
+                  "disposition",
+                  "documentURI",
+                  "effectiveDirective",
+                  "eventPhase",
+                  "lineNumber",
+                  "originalPolicy",
+                  "referrer",
+                  "returnValue",
+                  "sample",
+                  "sourceFile",
+                  "srcElement",
+                  "statusCode",
+                  "timeStamp",
+                  "type",
+                  "violatedDirective",
+                ];
+
+                pretty = "<code>SecurityPolicyViolationEvent:<br>";
+                props.forEach((prop) => {
+                pretty +=
+                    "&nbsp;&nbsp;" +
+                    prop +
+                    ":" +
+                    escapeHTMLPolicy.createHTML(e[prop]) +
+                    "<br>";
+                });
+                pretty += "</code><br>";
+            
+                document.getElementById("cspLog").innerHTML = nullHTMLPolicy.createHTML(
+                  document.getElementById("cspLog").innerHTML + pretty
+                );
+            });
+            
+            
+            // Safe (per Trusted Types) and unsafe (could be exploited) innerHTML assignment
+            
+            function safeSink() {
+            
+                // DOM-based XSS payload is safely escaped. Trusted Types policy is not violated.
+            
+                const escapeHTMLPolicy = trustedTypes.createPolicy("myEscapePolicy", {
+                  createHTML: (string) =>
+                    string
+                      .replace(/&/g, "&amp;")
+                      .replace(/</g, "&lt;")
+                      .replace(/"/g, "&quot;")
+                      .replace(/'/g, "&apos;"),
+                });
+                
+                let el = document.getElementById("targetDiv");
+                const escaped = escapeHTMLPolicy.createHTML(
+                    '<img src=x onerror=alert("xss")>'
+                );
+                console.log(escaped instanceof TrustedHTML); // true
+                el.innerHTML = escaped;
+            
+                console.log("Safe sink complete")
+            }
+            
+            function unsafeSink() {
+            
+                // DOM-based XSS exploit payload assigned directly. Trusted Types policy is violated.
+            
+                document.getElementById("targetDiv").innerHTML = 
+                    '<img src=x onerror=alert("xss")>';
+            
+                console.log("Unsafe sink complete")
+            }
+            
+            
+            // Display functions in HTML
+            
+            document.getElementById("safeSink").innerHTML =
+                nullHTMLPolicy.createHTML("<pre>" + safeSink.toString() + "</pre>");
+            document.getElementById("unsafeSink").innerHTML =
+            nullHTMLPolicy.createHTML(
+              "<pre>" + escapeHTMLPolicy.createHTML(unsafeSink.toString()) + "</pre>"
+            );
+        </script>
+  </body>
+</html>
