@@ -52,6 +52,7 @@
     <button onclick="off()">Turn off Trusted Types CSP</button><br />
     <button onclick="reportOnly()">Turn on Trusted Types CSP (Only report violations)</button><br />
     <button onclick="block()">Turn on Trusted Types CSP (Block and report violations)</button><br />
+    <button onclick="inventoryReportOnly()">Turn on Inventory and Trusted Types CSP (Only report violations)</button><br />
     
     <h2 id="iframeTitle">(None)</h2>
     <div id="iframeDesc">&nbsp;</div><br />
@@ -79,6 +80,14 @@
         document.getElementById("iframeDesc").textContent =
           "unsafeSink executes a DOM XSS payload but it is blocked 💥 and a CSP violation report is generated. safeSink uses Trusted Types to execute a sanitized payload.";
       }
+
+      function inventoryReportOnly() {
+        document.getElementById("iframe").src = "/inv";
+        document.getElementById("iframeTitle").textContent = "Script Inventory and Trusted Types CSP Report-Only";
+        document.getElementById("iframeDesc").textContent =
+          "A PoC 'Script Inventory' policy reports all scripts to a policy report API (?inventory=true). Trusted Types violations are reported to a different policy report API (?inventory=false).";
+      }
+
     </script>
   </body>
 </html>
